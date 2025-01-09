@@ -1,0 +1,245 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IBM PC Emulator</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Courier New', Courier, monospace;
+            background-color: black;
+            color: green;
+        }
+        .emulator, .chrome-os, .windows-os {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .emulator {
+            background-color: #000000;
+        }
+        .screen {
+            width: 80%;
+            height: 80%;
+            background-color: #101010;
+            border: 10px solid #303030;
+            padding: 20px;
+            box-sizing: border-box;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+        }
+        .output {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        .input-line {
+            display: flex;
+            align-items: center;
+        }
+        .prompt {
+            margin-right: 10px;
+        }
+        .input {
+            flex-grow: 1;
+            background-color: #101010;
+            color: green;
+            border: none;
+            outline: none;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .chrome-os, .windows-os {
+            background-color: #f2f2f2;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .chrome-window, .windows-window {
+            width: 80%;
+            height: 80%;
+            background-color: white;
+            border: 1px solid #ccc;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <div class="emulator" id="emulator">
+        <div class="screen" id="screen">
+            <div class="output" id="output">
+                <div>C:\></div>
+            </div>
+            <div class="input-line">
+                <span class="prompt">C:\></span>
+                <input type="text" class="input" id="input" onkeypress="handleInput(event)">
+            </div>
+            <input type="file" id="fileInput" style="display: none;" onchange="handleFileUpload(event)">
+        </div>
+    </div>
+
+
+    <div class="chrome-os" id="chrome-os">
+        <div class="chrome-window">
+            <h1>Chrome OS Emulator</h1>
+            <p>Welcome to the Chrome OS Emulator. Please reload the page to return to the IBM PC Emulator.</p>
+        </div>
+    </div>
+
+
+    <div class="windows-os" id="windows-os">
+        <div class="windows-window">
+            <h1>Windows 10 Emulator</h1>
+            <p>Welcome to the Windows 10 Emulator. Please reload the page to return to the IBM PC Emulator.</p>
+        </div>
+    </div>
+
+
+    <script>
+        const correctPassword = '6114';
+        let isLoggedIn = false;
+        let isFullScreen = true;
+
+
+        function handleInput(event) {
+            if (event.key === 'Enter') {
+                const input = document.getElementById('input');
+                const command = input.value.trim();
+                executeCommand(command);
+                input.value = '';
+            }
+        }
+
+
+        function executeCommand(command) {
+            const output = document.getElementById('output');
+            const newLine = document.createElement('div');
+            newLine.textContent = `C:\\> ${command}`;
+            output.appendChild(newLine);
+
+
+            const response = document.createElement('div');
+            const parts = command.split(' ');
+
+
+            if (parts[0].toLowerCase() === '!login' && parts[1] === 'lwinnie' && parts[2] === correctPassword) {
+                isLoggedIn = true;
+                response.textContent = 'Login successful. Exiting fullscreen mode.';
+                toggleFullScreen(false);
+            } else if (parts[0].toLowerCase() === '!login') {
+                response.textContent = 'WRONG PASSWORD.';
+            } else if (parts[0].toLowerCase() === '!logout' && parts[1] === correctPassword) {
+                isLoggedIn = false;
+                response.textContent = 'Logout successful. Entering fullscreen mode.';
+                toggleFullScreen(true);
+            } else if (isLoggedIn) {
+                switch (command.toLowerCase()) {
+                    case 'dir':
+                        response.textContent = ' Volume in drive C is DATA\n Volume Serial Number is 1234-5678\n\n Directory of C:\\\n\n08/01/2023  12:00 PM    <DIR>          .\n08/01/2023  12:00 PM    <DIR>          ..\n08/01/2023  12:00 PM               0  file.txt\n';
+                        break;
+                    case 'cls':
+                        output.innerHTML = '';
+                        return;
+                    case 'help':
+                    case '!help':
+                        response.textContent = 'DIR - List directory contents\nCLS - Clear the screen\nHELP - Display help information\nRUN - Execute JavaScript code\nUPLOAD - Upload a file\n!login lwinnie [password] - Login\n!logout [password] - Logout\nrun(chrome) - Run Chrome OS Emulator\nrun(windows) - Run Windows 10 Emulator\nSCRIPT - Execute custom JavaScript';
+                        break;
+                    case 'run':
+                        if (parts[1] && parts[1].toLowerCase() === 'chrome') {
+                            document.getElementById('emulator').style.display = 'none';
+                            document.getElementById('chrome-os').style.display = 'flex';
+                        } else if (parts[1] && parts[1].toLowerCase() === 'windows') {
+                            document.getElementById('emulator').style.display = 'none';
+                            document.getElementById('windows-os').style.display = 'flex';
+                        } else {
+                            response.textContent = `'${command}' is not recognized as an internal or external command, operable program or batch file.`;
+                        }
+                        break;
+                    case 'run(chrome)':
+                        document.getElementById('emulator').style.display = 'none';
+                        document.getElementById('chrome-os').style.display = 'flex';
+                        break;
+                    case 'run(windows)':
+                        document.getElementById('emulator').style.display = 'none';
+                        document.getElementById('windows-os').style.display = 'flex';
+                        break;
+                    case 'upload':
+                        document.getElementById('fileInput').click();
+                        return;
+                    case 'script':
+                        try {
+                            const scriptContent = command.slice('script'.length).trim();
+                            eval(scriptContent);
+                            response.textContent = 'Script executed successfully.';
+                        } catch (error) {
+                            response.textContent = `Error executing script: ${error.message}`;
+                        }
+                        break;
+                    default:
+                        response.textContent = `'${command}' is not recognized as an internal or external command, operable program or batch file.`;
+                        break;
+                }
+            } else {
+                response.textContent = 'Please login to use this command.';
+            }
+
+
+            output.appendChild(response);
+            output.scrollTop = output.scrollHeight;
+        }
+
+
+        function toggleFullScreen(isFull) {
+            const screen = document.getElementById('screen');
+            if (isFull) {
+                if (!document.fullscreenElement) {
+                    screen.requestFullscreen();
+                }
+            } else {
+                if (document.fullscreenElement) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const output = document.getElementById('output');
+                    const content = e.target.result;
+                    const fileContent = document.createElement('div');
+                    fileContent.textContent = `File Content:\n${content}`;
+                    output.appendChild(fileContent);
+                    output.scrollTop = output.scrollHeight;
+                };
+                reader.readAsText(file);
+            }
+        }
+
+
+        document.getElementById('input').focus(); // Ensure the input box is focused
+
+
+        // Repeatedly full screen if logged out
+        setInterval(() => {
+            if (isFullScreen && !document.fullscreenElement) {
+                toggleFullScreen(true);
+            }
+        }, 100); // Check every 100 milliseconds
+    </script>
+</body>
+</html>
